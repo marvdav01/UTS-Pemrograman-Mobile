@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "FlavorDash",
+    "slug": "flavordash",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "flavordash",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}
