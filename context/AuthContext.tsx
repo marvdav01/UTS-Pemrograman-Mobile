@@ -2,18 +2,29 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter, useSegments } from 'expo-router';
 
-// 3. API: Simulasi pemanggilan API (mockup API) untuk proses login
-const mockLoginAPI = async (username: string, password: string): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (username === 'user' && password === 'password') {
-        // 1. Stateless Authentication: Simulasi Token JWT
-        resolve('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.simulasi_payload_data_user.simulasi_signature');
-      } else {
-        reject(new Error('Kredensial tidak valid'));
-      }
-    }, 1000);
-  });
+// API Base URL (IP Address komputer lokal dan port server PHP)
+const API_BASE_URL = 'http://192.168.101.4:8000';
+
+const loginAPI = async (username: string, password: string): Promise<string> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/login.php`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Gagal login');
+    }
+
+    return data.token;
+  } catch (error: any) {
+    throw new Error(error.message || 'Koneksi ke server gagal');
+  }
 };
 
 type AuthContextType = {
@@ -70,7 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (username: string, password: string) => {
     try {
-      const token = await mockLoginAPI(username, password);
+      const token = await loginAPI(username, password);
       // Simpan JWT di AsyncStorage agar status login bertahan meski aplikasi ditutup
       await AsyncStorage.setItem('jwt_token', token);
       setUserToken(token);

@@ -1,16 +1,21 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
-// ============================================================
-// HALAMAN DETAIL PESANAN (Protected Route - dilindungi oleh JWT Middleware)
-// Halaman ini hanya bisa diakses jika token JWT valid
-// Validasi dilakukan di AuthContext.tsx sebelum halaman ini di-render
-// ============================================================
 export default function OrderDetailScreen() {
   const { logout, userToken } = useAuth();
   const router = useRouter();
+  const params = useLocalSearchParams();
+
+  // Ambil data dari params
+  const { name, price, image_url, description, category } = params;
+
+  // Format harga
+  const formattedPrice = new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+  }).format(Number(price || 0));
 
   return (
     <ScrollView style={styles.scrollContainer}>
@@ -23,35 +28,49 @@ export default function OrderDetailScreen() {
 
         <Text style={styles.title}>📋 Detail Pesanan</Text>
 
-        {/* NESTED VIEW: Card status autentikasi */}
-        <View style={styles.card}>
-          <View style={styles.statusRow}>
-            <View style={styles.statusDot} />
-            <Text style={styles.status}>Terautentikasi (Protected Route)</Text>
-          </View>
-
-          <Text style={styles.label}>Token JWT Anda (disimpan di AsyncStorage):</Text>
-          {/* Token JWT yang dibaca dari AsyncStorage melalui AuthContext */}
-          <Text style={styles.tokenText}>{userToken}</Text>
+        {/* Gambar Produk */}
+        <View style={styles.imageCard}>
+          <Image source={{ uri: image_url as string }} style={styles.detailImage} />
         </View>
 
-        {/* NESTED VIEW: Card simulasi pesanan */}
+        {/* Info Produk */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Ringkasan Pesanan</Text>
+          <Text style={styles.itemName}>{name}</Text>
+          <Text style={styles.itemCategory}>{category}</Text>
+          <Text style={styles.itemDescription}>{description}</Text>
+        </View>
+
+        {/* Ringkasan Pesanan */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Ringkasan Pembayaran</Text>
           
           <View style={styles.orderRow}>
-            <Text style={styles.orderLabel}>Item</Text>
-            <Text style={styles.orderValue}>Spaghetti Bolognese</Text>
+            <Text style={styles.orderLabel}>Harga Satuan</Text>
+            <Text style={styles.orderValue}>{formattedPrice}</Text>
           </View>
           <View style={styles.orderRow}>
-            <Text style={styles.orderLabel}>Jumlah</Text>
-            <Text style={styles.orderValue}>1x</Text>
+            <Text style={styles.orderLabel}>Pajak (10%)</Text>
+            <Text style={styles.orderValue}>
+              {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(price || 0) * 0.1)}
+            </Text>
           </View>
-          <View style={styles.orderRow}>
-            <Text style={styles.orderLabel}>Total</Text>
-            <Text style={styles.orderPrice}>Rp 45.000</Text>
+          <View style={[styles.orderRow, { borderBottomWidth: 0 }]}>
+            <Text style={styles.totalLabel}>Total Bayar</Text>
+            <Text style={styles.orderPrice}>
+               {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(price || 0) * 1.1)}
+            </Text>
           </View>
         </View>
+
+        {/* Info Token (Untuk keperluan UTS/Tugas) */}
+        <View style={styles.card}>
+          <Text style={styles.tokenLabel}>Token JWT Aktif:</Text>
+          <Text style={styles.tokenText} numberOfLines={1}>{userToken}</Text>
+        </View>
+
+        <TouchableOpacity style={styles.orderButton} onPress={() => alert('Pesanan Berhasil Dibuat!')}>
+          <Text style={styles.orderButtonText}>Konfirmasi Pesanan</Text>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
           <Text style={styles.logoutText}>Logout</Text>
@@ -81,61 +100,64 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: '5%',             // PERSENTASE
+    marginBottom: '5%',
     textAlign: 'center',
     color: '#2C3E50',
   },
+  imageCard: {
+    backgroundColor: '#fff',
+    borderRadius: 15,
+    overflow: 'hidden',
+    marginBottom: '5%',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+  },
+  detailImage: {
+    width: '100%',
+    height: 200,
+    resizeMode: 'cover',
+  },
+  itemName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2C3E50',
+  },
+  itemCategory: {
+    fontSize: 14,
+    color: '#FF6B6B',
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  itemDescription: {
+    fontSize: 14,
+    color: '#7F8C8D',
+    marginTop: 10,
+    lineHeight: 20,
+  },
   card: {
     backgroundColor: '#fff',
-    padding: '5%',                  // PERSENTASE
+    padding: '5%',
     borderRadius: 12,
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
-    marginBottom: '5%',             // PERSENTASE
-  },
-  statusRow: {
-    flexDirection: 'row',           // FLEXBOX
-    alignItems: 'center',
-    marginBottom: '4%',             // PERSENTASE
-  },
-  statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#2ecc71',
-    marginRight: 8,
-  },
-  status: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#2ecc71',
-  },
-  label: {
-    fontSize: 13,
-    color: '#7F8C8D',
-    marginBottom: '2%',             // PERSENTASE
-  },
-  tokenText: {
-    fontSize: 11,
-    color: '#95A5A6',
-    backgroundColor: '#f0f3f4',
-    padding: 10,
-    borderRadius: 6,
-    fontFamily: 'monospace',
+    marginBottom: '5%',
   },
   cardTitle: {
     fontSize: 17,
     fontWeight: '700',
     color: '#2C3E50',
-    marginBottom: '4%',             // PERSENTASE
+    marginBottom: '4%',
   },
   orderRow: {
-    flexDirection: 'row',           // FLEXBOX ROW
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f3f4',
   },
@@ -148,21 +170,52 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#2C3E50',
   },
-  orderPrice: {
+  totalLabel: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: '#2C3E50',
+  },
+  orderPrice: {
+    fontSize: 18,
+    fontWeight: 'bold',
     color: '#FF6B6B',
+  },
+  tokenLabel: {
+    fontSize: 13,
+    color: '#7F8C8D',
+    marginBottom: 8,
+  },
+  tokenText: {
+    fontSize: 11,
+    color: '#95A5A6',
+    backgroundColor: '#f0f3f4',
+    padding: 10,
+    borderRadius: 6,
+    fontFamily: 'monospace',
+  },
+  orderButton: {
+    backgroundColor: '#2ecc71',
+    padding: 18,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: '4%',
+    elevation: 4,
+  },
+  orderButtonText: {
+    color: '#fff',
+    fontSize: 17,
+    fontWeight: 'bold',
   },
   logoutButton: {
     backgroundColor: '#e74c3c',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
-    marginTop: '3%',                // PERSENTASE
+    marginBottom: '10%',
   },
   logoutText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });
